@@ -20,6 +20,7 @@ class Yolov4(object):
                  class_name_path='coco_classes.txt',
                  config=yolo_config,
                  ):
+        print(yolo_config)
         assert config['img_size'][0] == config['img_size'][1], 'not support yet'
         assert config['img_size'][0] % config['strides'][-1] == 0, 'must be a multiple of last stride'
         self.class_names = [line.strip() for line in open(class_name_path).readlines()]
@@ -116,7 +117,7 @@ class Yolov4(object):
                                         class_names=self.class_names)
 
         output_img = draw_bbox(raw_img, detections, cmap=self.class_color, random_color=random_color, figsize=figsize,
-                  show_text=show_text, show_img=plot_img)
+                    show_text=show_text, show_img=plot_img)
         if return_output:
             return output_img, detections
         else:

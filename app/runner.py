@@ -19,7 +19,7 @@ def predict_and_save_image(image_path):
     print('\nProcessing: %s' % image_path)
     processed_time = datetime.datetime.now()
     image_name = os.path.split(image_path)[1].split('.')[0]
-    array, df = model.predict(image_path, random_color=True)
+    array, df = model.predict(image_path, random_color=True, plot_img=False)
     if not os.path.exists('../img_processed'):
         os.mkdir('../img_processed')
     cv2.imwrite('../img_processed/%s_%s.jpeg' % (image_name, processed_time.microsecond), array)
@@ -34,14 +34,14 @@ if __name__ == '__main__':
     yolo_time = datetime.datetime.now()
     print('yolo init complete in: %s' % (yolo_time - start_time))
 
-    print(predict_and_save_image('../img/street.jpeg'))
     print(predict_and_save_image('../img/test6.jpg'))
     print(predict_and_save_image('../img/test2.jpg'))
+    print(predict_and_save_image('../img/street.jpeg'))
     print(predict_and_save_image('../img/test3.jpg'))
     print(predict_and_save_image('../img/test.jpg'))
-    print(predict_and_save_image('../img/test.jpg'))
-    print(predict_and_save_image('../img/test.jpg'))
-    print(predict_and_save_image('../img/test.jpg'))
-    print(predict_and_save_image('../img/test.jpg'))
+    # print(predict_and_save_image('../img/test.jpg'))
+    # print(predict_and_save_image('../img/test.jpg'))
+    # print(predict_and_save_image('../img/test.jpg'))
+    # print(predict_and_save_image('../img/test.jpg'))
 
     print('\ntotal time: %s' % (datetime.datetime.now() - start_time))
