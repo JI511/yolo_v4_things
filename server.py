@@ -1,15 +1,18 @@
 import datetime
 import io
 import socket
+import sys
 from PIL import Image
-from . import yolo_predictions
+from yolo_predictions import YoloPredictions
 
+yolo_model = YoloPredictions()
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # AF_INET = IP, SOCK_STREAM = TCP
 server.bind(('localhost', 1002))  # 127.0.0.1
 print('server bound to localhost at port 1002')
 server.listen()
 print('server listening...')
 BUFFER_SIZE = 4096
+
 
 while True:
     client_socket, client_address = server.accept()
@@ -26,5 +29,6 @@ while True:
 
     image = Image.open(file_stream)
     image_time = datetime.datetime.now().microsecond
-    image.save('../img_processed/%s.jpeg' % image_time, format='JPEG')
-    print('Image: %s saved' % image_time)
+    yolo_model.predict_and_save_image(image)
+    # image.save('../img_processed/%s.jpeg' % image_time, format='JPEG')
+    # print('Image: %s saved' % image_time)
