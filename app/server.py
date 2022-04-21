@@ -2,6 +2,7 @@ import datetime
 import io
 import socket
 from PIL import Image
+from . import yolo_predictions
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # AF_INET = IP, SOCK_STREAM = TCP
 server.bind(('localhost', 1002))  # 127.0.0.1
