@@ -1,7 +1,7 @@
 import datetime
 import io
+import os
 import socket
-import sys
 from PIL import Image
 from yolo_predictions import YoloPredictions
 
@@ -25,10 +25,11 @@ while True:
         file_stream.write(packet)
         packet = client_socket.recv(BUFFER_SIZE)
 
-        # TODO send ack messages or image title?
-
     image = Image.open(file_stream)
-    image_time = datetime.datetime.now().microsecond
-    yolo_model.predict_and_save_image(image)
-    # image.save('../img_processed/%s.jpeg' % image_time, format='JPEG')
-    # print('Image: %s saved' % image_time)
+    image_name = 'temp_%s.jpeg' % datetime.datetime.now().microsecond
+    image_path = './img_processed/%s' % image_name
+    image.save(image_path, format='JPEG')
+    print('saved image at: %s' % image_path)
+    yolo_model.predict_and_save_image(image_path)
+    os.remove('./img_processed/%s' % image_name)
+    print('temp image removed at: %s' % image_path)

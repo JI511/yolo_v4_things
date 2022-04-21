@@ -18,16 +18,16 @@ class YoloPredictions(object):
         """
         Performs a model prediction on the provided image and saves the predicted image with bounding boxes.
 
-        :param image_data: Path to the image or image bytes.
+        :param image_data: Path to the image.
         :return The time taken to perform and save the prediction.
         """
         print('\nProcessing: %s' % image_data)
         processed_time = datetime.datetime.now()
-        image_name = os.path.split(image_data)[1].split('.')[0]
+        image_name = os.path.split(image_data)[1]
         array, df = self.model.predict(image_data, random_color=True, plot_img=False)
-        if not os.path.exists('img_processed'):
-            os.mkdir('img_processed')
-        cv2.imwrite('../img_processed/%s_%s.jpeg' % (image_name, processed_time.microsecond), array)
+        if not os.path.exists('./img_processed'):
+            os.mkdir('./img_processed')
+        cv2.imwrite('./img_processed/processed_%s' % image_name, array)
         # print(df)
         return datetime.datetime.now() - processed_time
 
