@@ -3,6 +3,7 @@ import io
 import os
 import socket
 from PIL import Image
+from PIL import UnidentifiedImageError
 from yolo_predictions import YoloPredictions
 
 yolo_model = YoloPredictions()
@@ -34,13 +35,18 @@ while True:
             file_stream.write(packet)
             packet = client_socket.recv(BUFFER_SIZE)
 
-    image = Image.open(file_stream)
-    image_name = 'temp_%s.jpeg' % datetime.datetime.now().microsecond
-    image_path = './img_processed/%s' % image_name
-    image.save(image_path, format='JPEG')
-    # print('saved image at: %s' % image_path)
-    time_taken = yolo_model.predict_and_save_image(image_path)
-    print('process time: %s', time_taken)
-    os.remove('./img_processed/%s' % image_name)
+    # Sometimes the last image gets corrupted?
+    try:
+        image = Image.open(file_stream)
+        image_name = 'temp_%s.jpeg' % datetime.datetime.now().microsecond
+        image_path = './img_processed/%s' % image_name
+        image.save(image_path, format='JPEG')
+        # print('saved image at: %s' % image_path)
+        time_taken = yolo_model.predict_and_save_image(image_path)
+        print('process time: %s', time_taken)
+        os.remove('./img_processed/%s' % image_name)
+        # print('temp image removed at: %s' % image_path)
+    except UnidentifiedImageError:
+        print('There was an issue processing image data. Ignoring image.')
+
     client_socket.send(b'server complete')
-    # print('temp image removed at: %s' % image_path)
