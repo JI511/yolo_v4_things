@@ -15,7 +15,6 @@ while count < 10:
             print('client acknowledges server ready, sending image, count: %s' % count)
             file = open('img/street.jpeg', 'rb')
             image_data = file.read(BUFFER_SIZE)
-            time.sleep(1)
 
             packet_count = 1
             while image_data:
@@ -23,7 +22,7 @@ while count < 10:
                 image_data = file.read(BUFFER_SIZE)
                 packet_count += 1
             file.close()
-            time.sleep(0.005)
+            time.sleep(1)
             print('client image sent, packets: %s' % packet_count)
             client.send(b'client complete')
             print('send client complete')
