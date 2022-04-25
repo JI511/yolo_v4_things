@@ -116,3 +116,4 @@ dmypy.json
 img_processed/
 .idea/
 *.weights
+*.mp4
