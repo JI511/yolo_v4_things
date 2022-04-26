@@ -47,28 +47,30 @@ def process_video():
         total_frame_count = int(cap.get(7))
         print("Frame count : ", total_frame_count)
         current_frame = 0
+        start_time = time.time()
         # Loop until the end of the video
         while cap.isOpened():
             image_name = str(cap.get(0)).replace('.', '_')
             # Capture frame-by-frame
             ret, frame = cap.read()
+            frame = cv2.resize(frame, (540, 380), fx=0, fy=0,
+                               interpolation=cv2.INTER_CUBIC)
             if ret and current_frame % 5 == 0:
                 image_path = 'img_client/cli_%s.jpeg' % image_name
                 cv2.imwrite(image_path, frame)
                 send_image(image_path)
+                print('frame %s sent' % current_frame)
 
-                k = cv2.waitKey(20)
-                # 113 is ASCII code for q key
-                if k == 113:
-                    break
             current_frame += 1
-            if current_frame % 20 == 0:
-                print(current_frame)
+            if current_frame % fps == 0:
+                print('frame: %s, time: %s' % (current_frame, time.time() - start_time))
+                start_time = time.time()
 
     # release the video capture object
     cap.release()
     # Closes all the windows currently opened.
     cv2.destroyAllWindows()
+    print('Releasing the capture and destroying any windows.')
 
 
 if __name__ == '__main__':

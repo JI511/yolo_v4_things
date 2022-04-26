@@ -6,20 +6,22 @@ import socket
 import threading
 import time
 
+import cv2
 from PIL import Image
 from PIL import UnidentifiedImageError
 
 from yolo_predictions import YoloPredictions
 
 BUFFER_SIZE = 2048
-image_queue = Queue()
+images_to_process_queue = Queue()
+processed_images = Queue()
 
 
 def collect_images(app_server):
     while True:
 
         client_socket, client_address = app_server.accept()
-        print('Client connected... client socket: %s, client address: %s' % (client_socket, client_address))
+        # print('Client connected... client socket: %s, client address: %s' % (client_socket, client_address))
         # Wait for client to send
         client_socket.send(b'server ready')
 
@@ -35,8 +37,8 @@ def collect_images(app_server):
             image_name = 'temp_%s.jpeg' % datetime.datetime.now().microsecond
             image_path = './img_processed/%s' % image_name
             image.save(image_path, format='JPEG')
-            image_queue.put(image_path)
-            print('image saved')
+            images_to_process_queue.put(image_path)
+            # print('image saved')
 
         except UnidentifiedImageError:
             print('There was an issue processing image data. Ignoring image.')
@@ -44,11 +46,30 @@ def collect_images(app_server):
 
 def perform_predictions(yolo_model):
     while True:
-        while not image_queue.empty():
-            image_pop = image_queue.get()
-            time_taken = yolo_model.predict_and_save_image(image_pop)
-            print('process time: %s', time_taken)
+        while not images_to_process_queue.empty():
+            image_pop = images_to_process_queue.get()
+            processed_array = yolo_model.predict_and_save_image(image_pop)
+            processed_images.put(processed_array)
             os.remove(image_pop)
+
+
+def display_images():
+    while True:
+        cur_time = time.time()
+        if processed_images.empty():
+            # put the thread to sleep so it doesnt take up processing time
+            time.sleep(0.05)
+        else:
+            while not processed_images.empty():
+                # control framerate since we are just showing single images
+                if time.time() - cur_time > 0.2:
+                    cur_time = time.time()
+                    proc_pop = processed_images.get()
+                    cv2.imshow('Processed', proc_pop)
+                    k = cv2.waitKey(20)
+                    # 113 is ASCII code for q key
+                    if k == 113:
+                        break
 
 
 if __name__ == '__main__':
@@ -66,3 +87,5 @@ if __name__ == '__main__':
     sock_thread.start()
     predict_thread = threading.Thread(target=perform_predictions, args=(yv4_model,))
     predict_thread.start()
+    show_thread = threading.Thread(target=display_images(), args=())
+    show_thread.start()
