@@ -34,7 +34,7 @@ def collect_images(app_server):
             image = Image.open(file_stream)
             image_name = 'temp_%s.jpeg' % datetime.datetime.now().microsecond
             image_path = './img_processed/%s' % image_name
-            # image.save(image_path, format='JPEG')
+            image.save(image_path, format='JPEG')
             image_queue.put(image_path)
             print('image saved')
 
