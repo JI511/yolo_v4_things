@@ -21,8 +21,6 @@ def collect_images(app_server):
     while True:
 
         client_socket, client_address = app_server.accept()
-        # print('Client connected... client socket: %s, client address: %s' % (client_socket, client_address))
-        # Wait for client to send
         client_socket.send(b'server ready')
 
         file_stream = io.BytesIO()
@@ -38,7 +36,6 @@ def collect_images(app_server):
             image_path = './img_processed/%s' % image_name
             image.save(image_path, format='JPEG')
             images_to_process_queue.put(image_path)
-            # print('image saved')
 
         except UnidentifiedImageError:
             print('There was an issue processing image data. Ignoring image.')
@@ -49,7 +46,13 @@ def perform_predictions(yolo_model):
         while not images_to_process_queue.empty():
             image_pop = images_to_process_queue.get()
             processed_array = yolo_model.predict_and_save_image(image_pop)
-            processed_images.put(processed_array)
+            height = processed_array.shape[0]
+            width = processed_array.shape[1]
+
+            txt_img = cv2.putText(img=processed_array, text="avg: %s" % yolo_model.average_predict_time,
+                                  org=(5, 5), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
+                                  color=(0, 0, 0), thickness=1)
+            processed_images.put(txt_img)
             os.remove(image_pop)
 
 
@@ -62,7 +65,7 @@ def display_images():
         else:
             while not processed_images.empty():
                 # control framerate since we are just showing single images
-                if time.time() - cur_time > 0.2:
+                if time.time() - cur_time > 0.5:
                     cur_time = time.time()
                     proc_pop = processed_images.get()
                     cv2.imshow('Processed', proc_pop)

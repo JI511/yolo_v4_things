@@ -1,11 +1,10 @@
-from io import BytesIO
+import argparse
 import os
 from queue import Queue
 import socket
 import time
 
 import cv2
-import numpy as np
 
 BUFFER_SIZE = 2048
 image_queue = Queue()
@@ -36,18 +35,13 @@ def send_image(im_path):
     client.close()
 
 
-def process_video():
-    # Creating a VideoCapture object to read the video
-    cap = cv2.VideoCapture('mp4/sparklers.mp4')
+def process_webcam_video(send_rate):
+    # Creating a VideoCapture object to read the webcam video
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     if cap.isOpened():
-        fps = int(cap.get(5))
-        print("Frame Rate : ", fps, "frames per second")
-
-        # Get frame count
-        total_frame_count = int(cap.get(7))
-        print("Frame count : ", total_frame_count)
-        current_frame = 0
         start_time = time.time()
+        current_time = time.time()
+        image_count = 0
         # Loop until the end of the video
         while cap.isOpened():
             image_name = str(cap.get(0)).replace('.', '_')
@@ -55,16 +49,15 @@ def process_video():
             ret, frame = cap.read()
             frame = cv2.resize(frame, (540, 380), fx=0, fy=0,
                                interpolation=cv2.INTER_CUBIC)
-            if ret and current_frame % 5 == 0:
+            # send an image at desired rate
+            if time.time() - current_time > (1 / send_rate):
+                current_time = time.time()
                 image_path = 'img_client/cli_%s.jpeg' % image_name
                 cv2.imwrite(image_path, frame)
                 send_image(image_path)
-                print('frame %s sent' % current_frame)
-
-            current_frame += 1
-            if current_frame % fps == 0:
-                print('frame: %s, time: %s' % (current_frame, time.time() - start_time))
-                start_time = time.time()
+                image_count += 1
+                if image_count % 25 == 0:
+                    print('images: %s, time: %s' % (image_count, time.time() - start_time))
 
     # release the video capture object
     cap.release()
@@ -74,4 +67,15 @@ def process_video():
 
 
 if __name__ == '__main__':
-    process_video()
+    client_send_rate = 1
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--send_rate", help="The number of frames per second to send to the server"
+                                            " for image processing. Default is 1 and max is 5.",
+                        type=int)
+    args = parser.parse_args()
+    if args.send_rate:
+        client_send_rate = args.send_rate
+        print('Using specified send rate value of: %s' % args.send_rate)
+
+    process_webcam_video(client_send_rate)
