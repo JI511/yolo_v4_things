@@ -35,7 +35,7 @@ def collect_images(app_server):
             image_name = 'temp_%s.jpeg' % datetime.datetime.now().microsecond
             image_path = './img_processed/%s' % image_name
             image.save(image_path, format='JPEG')
-            images_to_process_queue.put(image_path)
+            images_to_process_queue.put((image_path, time.time()))
 
         except UnidentifiedImageError:
             print('There was an issue processing image data. Ignoring image.')
@@ -45,15 +45,20 @@ def perform_predictions(yolo_model):
     while True:
         while not images_to_process_queue.empty():
             image_pop = images_to_process_queue.get()
-            processed_array = yolo_model.predict_and_save_image(image_pop)
+            image_path = image_pop[0]
+            image_recv_time = image_pop[1]
+            processed_array = yolo_model.predict_and_save_image(image_path)
             height = processed_array.shape[0]
             width = processed_array.shape[1]
 
-            txt_img = cv2.putText(img=processed_array, text="avg: %s" % yolo_model.average_predict_time,
-                                  org=(5, 5), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
-                                  color=(0, 0, 0), thickness=1)
-            processed_images.put(txt_img)
-            os.remove(image_pop)
+            txt_img_a = cv2.putText(img=processed_array, text="avg: %s" % yolo_model.average_predict_time,
+                                    org=(5, (height - 5)), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
+                                    color=(0, 0, 0), thickness=1)
+            txt_img_b = cv2.putText(img=txt_img_a, text="time since recv: %s" % (time.time() - image_recv_time),
+                                    org=(5, (height - 25)), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
+                                    color=(0, 0, 0), thickness=1)
+            processed_images.put(txt_img_b)
+            os.remove(image_path)
 
 
 def display_images():
