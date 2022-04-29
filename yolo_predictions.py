@@ -1,9 +1,6 @@
 import datetime
 import os
-import tensorflow as tf
-import cv2
-import numpy as np
-from glob import glob
+import time
 from models import Yolov4
 import sys
 sys.path.append("")
@@ -12,24 +9,32 @@ sys.path.append("")
 class YoloPredictions(object):
 
     def __init__(self):
+        if not os.path.exists('./img_processed'):
+            os.mkdir('./img_processed')
         self.model = Yolov4(weight_path='yolov4.weights', class_name_path='class_names/coco_classes.txt')
+        self.total_predictions = 0
+        self._prediction_sum = 0
+        self.average_predict_time = None
 
     def predict_and_save_image(self, image_data):
         """
         Performs a model prediction on the provided image and saves the predicted image with bounding boxes.
 
         :param image_data: Path to the image.
-        :return The time taken to perform and save the prediction.
+        :return Numpy array of the processed image.
         """
-        print('\nProcessing: %s' % image_data)
-        processed_time = datetime.datetime.now()
-        image_name = os.path.split(image_data)[1]
+        start_time = time.time()
         array, df = self.model.predict(image_data, random_color=True, plot_img=False)
-        if not os.path.exists('./img_processed'):
-            os.mkdir('./img_processed')
-        cv2.imwrite('./img_processed/processed_%s' % image_name, array)
-        # print(df)
-        return datetime.datetime.now() - processed_time
+        processing_time = time.time() - start_time
+        self._prediction_sum += processing_time
+        self.total_predictions += 1
+        if self.average_predict_time is None:
+            self.average_predict_time = processing_time
+        else:
+            self.average_predict_time = round(self._prediction_sum / self.total_predictions, 4)
+        print('Avg prediction time: %s' % self.average_predict_time)
+
+        return array
 
 
 if __name__ == '__main__':
