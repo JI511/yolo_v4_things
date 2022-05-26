@@ -15,6 +15,8 @@ from yolo_predictions import YoloPredictions
 BUFFER_SIZE = 2048
 images_to_process_queue = Queue()
 processed_images = Queue()
+SERVER_IP = '192.168.0.228'
+SERVER_PORT = 10002
 
 
 def collect_images(app_server):
@@ -86,8 +88,8 @@ if __name__ == '__main__':
     yv4_model.predict_and_save_image('./img/street.jpeg')
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # AF_INET = IP, SOCK_STREAM = TCP
-    server.bind(('localhost', 1002))  # 127.0.0.1
-    print('server bound to localhost at port 1002')
+    server.bind((SERVER_IP, SERVER_PORT))
+    print('server bound to %s at port %s' % (SERVER_IP, SERVER_PORT))
     server.listen()
     print('server listening...')
 

@@ -8,13 +8,15 @@ import cv2
 
 BUFFER_SIZE = 2048
 image_queue = Queue()
+SERVER_IP = '192.168.0.228'
+SERVER_PORT = 10002
 
 
 def send_image(im_path):
     """
     """
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # AF_INET = IP, SOCK_STREAM = TCP
-    client.connect(('localhost', 1002))  # 127.0.0.1
+    client.connect((SERVER_IP, SERVER_PORT))
 
     packet = client.recv(BUFFER_SIZE)
     if packet == b'server ready':
