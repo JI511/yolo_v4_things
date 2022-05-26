@@ -54,7 +54,7 @@ def perform_predictions(yolo_model):
             txt_img_a = cv2.putText(img=processed_array, text="avg: %s" % yolo_model.average_predict_time,
                                     org=(5, (height - 5)), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
                                     color=(0, 0, 0), thickness=1)
-            txt_img_b = cv2.putText(img=txt_img_a, text="time since recv: %s" % (time.time() - image_recv_time),
+            txt_img_b = cv2.putText(img=txt_img_a, text="time since recv: %s" % round(time.time() - image_recv_time, 3),
                                     org=(5, (height - 25)), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
                                     color=(0, 0, 0), thickness=1)
             processed_images.put(txt_img_b)
