@@ -78,14 +78,20 @@ def perform_predictions(yolo_model):
 
 
 def display_images():
+    current_time = time.time()
     while True:
         if processed_images.empty():
-            # put the thread to sleep so it doesnt take up processing time
+            # put the thread to sleep so it doesnt take up processing time, this was causing odd socket behavior
             time.sleep(0.05)
         else:
             while not processed_images.empty():
                 proc_pop = processed_images.get()
-                cv2.imshow('Processed', proc_pop)
+                txt_img = cv2.putText(img=proc_pop,
+                                      text="FPS: %s" % int(1 / (time.time() - current_time)),
+                                      org=(5, 15), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
+                                      color=(0, 0, 0), thickness=1)
+                current_time = time.time()
+                cv2.imshow('Processed', txt_img)
 
                 # This escape sequence is needed for cv2.imshow() to work
                 k = cv2.waitKey(20)
