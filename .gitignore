@@ -117,3 +117,4 @@ img_processed/
 .idea/
 *.weights
 *.mp4
+*.bat

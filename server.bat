@@ -1,1 +1,0 @@
-cmd /k .\venv\Scripts\python.exe server.py

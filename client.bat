@@ -1,1 +1,0 @@
-cmd /k .\venv\Scripts\python.exe client.py --send_rate 2
