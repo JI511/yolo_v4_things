@@ -85,11 +85,7 @@ def display_images():
         else:
             while not processed_images.empty():
                 proc_pop = processed_images.get()
-                txt_image = cv2.putText(img=proc_pop,
-                                        text="Queued images: %s" % processed_images.qsize(),
-                                        org=(5, 5), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
-                                        color=(0, 0, 0), thickness=1)
-                cv2.imshow('Processed', txt_image)
+                cv2.imshow('Processed', proc_pop)
 
                 # This escape sequence is needed for cv2.imshow() to work
                 k = cv2.waitKey(20)
@@ -97,7 +93,7 @@ def display_images():
                 if k == 113:
                     break
 
-                # if we fall too far behind, purge the queue
+                # if we fall too far behind, purge the queue (shouldn't happen?)
                 if processed_images.qsize() > 20:
                     with processed_images.mutex:
                         processed_images.queue.clear()
