@@ -38,8 +38,11 @@ def send_image(im_path):
 
 
 def process_webcam_video(send_rate):
+    """
+
+    """
     # Creating a VideoCapture object to read the webcam video
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
     if cap.isOpened():
         start_time = time.time()
         current_time = time.time()

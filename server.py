@@ -46,7 +46,8 @@ def collect_images(app_server, image_processing):
                 image.save(image_path, format='JPEG')
                 images_to_process_queue.put((image_path, time.time()))
             else:
-                processed_images.put(np.asarray(image))
+                img_arr = np.asarray(image)
+                processed_images.put(img_arr)
 
         except UnidentifiedImageError:
             print('There was an issue processing image data. Ignoring image.')
@@ -66,7 +67,7 @@ def perform_predictions(yolo_model):
             height = processed_array.shape[0]
             width = processed_array.shape[1]
 
-            txt_img_a = cv2.putText(img=processed_array, text="avg: %s" % yolo_model.average_predict_time,
+            txt_img_a = cv2.putText(img=processed_array, text="avg predict time: %s" % yolo_model.average_predict_time,
                                     org=(5, (height - 5)), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
                                     color=(0, 0, 0), thickness=1)
             txt_img_b = cv2.putText(img=txt_img_a, text="time since recv: %s" % round(time.time() - image_recv_time, 3),
@@ -78,21 +79,24 @@ def perform_predictions(yolo_model):
 
 def display_images():
     while True:
-        cur_time = time.time()
         if processed_images.empty():
             # put the thread to sleep so it doesnt take up processing time
             time.sleep(0.05)
         else:
             while not processed_images.empty():
                 # control framerate since we are just showing single images
-                if time.time() - cur_time > 0.5:
-                    cur_time = time.time()
-                    proc_pop = processed_images.get()
-                    cv2.imshow('Processed', proc_pop)
-                    k = cv2.waitKey(20)
-                    # 113 is ASCII code for q key
-                    if k == 113:
-                        break
+                proc_pop = processed_images.get()
+
+                txt_image = cv2.putText(img=proc_pop,
+                                        text="Queued images: %s" % processed_images.qsize(),
+                                        org=(5, 5), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
+                                        color=(0, 0, 0), thickness=1)
+
+                cv2.imshow('Processed', txt_image)
+                k = cv2.waitKey(20)
+                # 113 is ASCII code for q key
+                if k == 113:
+                    break
 
 
 if __name__ == '__main__':
