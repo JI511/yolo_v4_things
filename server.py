@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import io
 import os
@@ -7,6 +8,7 @@ import threading
 import time
 
 import cv2
+import numpy as np
 from PIL import Image
 from PIL import UnidentifiedImageError
 
@@ -19,7 +21,8 @@ SERVER_IP = '192.168.0.228'
 SERVER_PORT = 10002
 
 
-def collect_images(app_server):
+def collect_images(app_server, image_processing):
+    received_images = 0
     while True:
 
         client_socket, client_address = app_server.accept()
@@ -34,13 +37,21 @@ def collect_images(app_server):
         # Sometimes the last image gets corrupted?
         try:
             image = Image.open(file_stream)
-            image_name = 'temp_%s.jpeg' % datetime.datetime.now().microsecond
-            image_path = './img_processed/%s' % image_name
-            image.save(image_path, format='JPEG')
-            images_to_process_queue.put((image_path, time.time()))
+            received_images += 1
+            if image_processing:
+                # todo get rid of this temp file creation
+                image_name = 'temp_%s.jpeg' % datetime.datetime.now().microsecond
+                image_path = './img_processed/%s' % image_name
+                image.save(image_path, format='JPEG')
+                images_to_process_queue.put((image_path, time.time()))
+            else:
+                processed_images.put(np.asarray(image))
 
         except UnidentifiedImageError:
             print('There was an issue processing image data. Ignoring image.')
+
+        if received_images % 25 == 0:
+
 
 
 def perform_predictions(yolo_model):
@@ -83,9 +94,19 @@ def display_images():
 
 
 if __name__ == '__main__':
-    yv4_model = YoloPredictions()
-    print('Performing test prediciton...')
-    yv4_model.predict_and_save_image('./img/street.jpeg')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--do_processing", help="True if you want to do object detection on the video stream.",
+                        type=bool, default=False)
+    args = parser.parse_args()
+
+    do_image_processing = args.do_processing
+
+    if do_image_processing:
+        yv4_model = YoloPredictions()
+        print('Performing test prediciton...')
+        yv4_model.predict_and_save_image('./img/street.jpeg')
+        predict_thread = threading.Thread(target=perform_predictions, args=(yv4_model,))
+        predict_thread.start()
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # AF_INET = IP, SOCK_STREAM = TCP
     server.bind((SERVER_IP, SERVER_PORT))
@@ -93,9 +114,7 @@ if __name__ == '__main__':
     server.listen()
     print('server listening...')
 
-    sock_thread = threading.Thread(target=collect_images, args=(server,))
+    sock_thread = threading.Thread(target=collect_images, args=(server, do_image_processing))
     sock_thread.start()
-    predict_thread = threading.Thread(target=perform_predictions, args=(yv4_model,))
-    predict_thread.start()
-    show_thread = threading.Thread(target=display_images(), args=())
+    show_thread = threading.Thread(target=display_images, args=())
     show_thread.start()
