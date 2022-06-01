@@ -81,4 +81,7 @@ if __name__ == '__main__':
     client_send_rate = args.send_rate
     print('Using specified send rate value of: %s' % args.send_rate)
 
+    if not os.path.exists('./img_client'):
+        os.mkdir('./img_client')
+
     process_webcam_video(client_send_rate)
