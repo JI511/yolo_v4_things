@@ -23,6 +23,7 @@ SERVER_PORT = 10002
 
 def collect_images(app_server, image_processing):
     received_images = 0
+    current_time = time.time()
     while True:
 
         client_socket, client_address = app_server.accept()
@@ -51,7 +52,8 @@ def collect_images(app_server, image_processing):
             print('There was an issue processing image data. Ignoring image.')
 
         if received_images % 25 == 0:
-
+            print('%s images received, %s' % (received_images, time.time() - current_time))
+            current_time = time.time()
 
 
 def perform_predictions(yolo_model):
