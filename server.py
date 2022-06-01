@@ -84,19 +84,23 @@ def display_images():
             time.sleep(0.05)
         else:
             while not processed_images.empty():
-                # control framerate since we are just showing single images
                 proc_pop = processed_images.get()
-
                 txt_image = cv2.putText(img=proc_pop,
                                         text="Queued images: %s" % processed_images.qsize(),
                                         org=(5, 5), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
                                         color=(0, 0, 0), thickness=1)
-
                 cv2.imshow('Processed', txt_image)
+
+                # This escape sequence is needed for cv2.imshow() to work
                 k = cv2.waitKey(20)
                 # 113 is ASCII code for q key
                 if k == 113:
                     break
+
+                # if we fall too far behind, purge the queue
+                if processed_images.qsize() > 20:
+                    with processed_images.mutex:
+                        processed_images.queue.clear()
 
 
 if __name__ == '__main__':
