@@ -38,8 +38,11 @@ def send_image(im_path):
 
 
 def process_webcam_video(send_rate):
+    """
+
+    """
     # Creating a VideoCapture object to read the webcam video
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
     if cap.isOpened():
         start_time = time.time()
         current_time = time.time()
@@ -69,15 +72,16 @@ def process_webcam_video(send_rate):
 
 
 if __name__ == '__main__':
-    client_send_rate = 1
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("--send_rate", help="The number of frames per second to send to the server"
-                                            " for image processing. Default is 1 and max is 5.",
-                        type=int)
+    parser.add_argument("--send_rate", help="The number of frames per second (integer) to send to the server"
+                                            " for image processing. The default value is uncapped.",
+                        type=int, default=10000)
     args = parser.parse_args()
-    if args.send_rate:
-        client_send_rate = args.send_rate
-        print('Using specified send rate value of: %s' % args.send_rate)
+
+    client_send_rate = args.send_rate
+    print('Using specified send rate value of: %s' % args.send_rate)
+
+    if not os.path.exists('./img_client'):
+        os.mkdir('./img_client')
 
     process_webcam_video(client_send_rate)
