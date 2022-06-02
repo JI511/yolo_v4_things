@@ -16,4 +16,4 @@ yolo_config = {
     'score_threshold': 0.3,
 }
 
-VIDEO_SAVE_DIRECTORY = r'D:\yolo_videos'
+VIDEO_SAVE_DIRECTORY = r'/home/pi/Desktop'

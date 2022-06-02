@@ -55,7 +55,7 @@ def process_webcam_video(send_rate):
     """
     # Creating a VideoCapture object to read the webcam video
     cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
-    frame_rate = cap.get(cv2.CAP_PROP_FPS)
+    # frame_rate = cap.get(cv2.CAP_PROP_FPS)
 
     if cap.isOpened():
         start_time = time.time()
@@ -64,8 +64,9 @@ def process_webcam_video(send_rate):
 
         # Define the codec and create VideoWriter object
         fourcc = cv2.VideoWriter_fourcc(*'h264')  # h264 supports web browser
-        out_path = os.path.join(VIDEO_SAVE_DIRECTORY, '%s.mp4' % datetime.datetime.now().strftime("%m-%d-%Y_%H:%M:S"))
-        out = cv2.VideoWriter(out_path, fourcc, frame_rate, (540, 380))
+        out_path = os.path.join(VIDEO_SAVE_DIRECTORY, '%s.avi' % datetime.datetime.now().strftime("%m-%d-%Y_%H:%M:S"))
+        out = cv2.VideoWriter(out_path, fourcc, 30, (540, 380))
+        print('VideoWriter created')
 
         # Loop until the end of the video
         while cap.isOpened():
@@ -84,6 +85,7 @@ def process_webcam_video(send_rate):
                 image_queue.put(image_path)
                 image_count += 1
                 if image_count % 25 == 0:
+                    # TODO make bigger and add something for sending
                     print('images: %s, time: %s' % (image_count, time.time() - start_time))
 
         out.release()
@@ -113,5 +115,3 @@ if __name__ == '__main__':
 
     send_thread = threading.Thread(target=send_images, args=())
     send_thread.start()
-
-    process_webcam_video(client_send_rate)
