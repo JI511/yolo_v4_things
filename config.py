@@ -15,3 +15,5 @@ yolo_config = {
     'iou_threshold': 0.413,
     'score_threshold': 0.3,
 }
+
+VIDEO_SAVE_DIRECTORY = r'D:\yolo_videos'
