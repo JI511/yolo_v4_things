@@ -66,7 +66,7 @@ def process_webcam_video(send_rate):
         # Define the codec and create VideoWriter object
         fourcc = cv2.VideoWriter_fourcc(*'DIVX')  # DIVX, XVID, MJPG, X264, WMV1, WMV2
         out_path = os.path.join(VIDEO_SAVE_DIRECTORY, '%s.avi' % datetime.datetime.now().strftime("%m-%d-%Y_%H:%M:S"))
-        out = cv2.VideoWriter(out_path, fourcc, 30, (540, 380))
+        out = cv2.VideoWriter(out_path, fourcc, frame_rate, (540, 380))
         print('VideoWriter created with output dir: %s' % out_path)
 
         # Loop until the end of the video
@@ -88,6 +88,12 @@ def process_webcam_video(send_rate):
                 if image_count % 250 == 0:
                     # TODO make bigger and add something for sending
                     print('images: %s, time: %s' % (image_count, time.time() - start_time))
+            
+            # TODO how does this work
+            k = cv2.waitKey(20)
+            # 113 is ASCII code for q key
+            if k == 113:
+                break
 
         out.release()
 

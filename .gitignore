@@ -114,6 +114,7 @@ dmypy.json
 .pyre/
 
 img_processed/
+img_client/
 .idea/
 *.weights
 *.mp4
