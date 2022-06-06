@@ -49,7 +49,7 @@ def send_images():
                 client.close()
 
 
-def process_webcam_video(send_rate):
+def process_webcam_video(send_rate, fourcc, output_name=None, max_time=100):
     """
 
     """
@@ -57,15 +57,18 @@ def process_webcam_video(send_rate):
     cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
 
     if cap.isOpened():
-        frame_rate = cap.get(cv2.CAP_PROP_FPS)
-        print('Detected framerate: %s' % frame_rate)
         start_time = time.time()
         current_time = time.time()
         image_count = 0
 
         # Define the codec and create VideoWriter object
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')  # DIVX, XVID, MJPG, X264, WMV1, WMV2
-        out_path = os.path.join(VIDEO_SAVE_DIRECTORY, '%s.avi' % datetime.datetime.now().strftime("%m-%d-%Y_%H:%M:%S"))
+        fourcc = cv2.VideoWriter_fourcc(*'%s' % fourcc)  # DIVX, XVID, MJPG, X264, WMV1, WMV2
+        date_path = '%s.avi' % datetime.datetime.now().strftime("%m-%d-%Y_%H:%M:%S")
+        if output_name is not None:
+            out_path = os.path.join(VIDEO_SAVE_DIRECTORY, output_name)
+        else:
+            out_path = os.path.join(VIDEO_SAVE_DIRECTORY, date_path)
+        # frame rate hard coded since returned frame rate not reachable on ras pi
         out = cv2.VideoWriter(out_path, fourcc, 15, (540, 380))
         print('VideoWriter created with output dir: %s' % out_path)
 
@@ -93,6 +96,9 @@ def process_webcam_video(send_rate):
             k = cv2.waitKey(20)
             # 113 is ASCII code for q key
             if k == 113:
+                break
+
+            if time.time() - start_time > max_time:
                 break
 
         out.release()
