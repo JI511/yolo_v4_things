@@ -17,7 +17,7 @@ from yolo_predictions import YoloPredictions
 BUFFER_SIZE = 2048
 images_to_process_queue = Queue()
 processed_images_queue = Queue()
-display_queue = Queue()
+application_queue = Queue()
 SERVER_IP = '192.168.0.228'
 SERVER_PORT = 10002
 
@@ -29,7 +29,7 @@ def process_webcam(process_images):
     if cap.isOpened():
         start_time = time.time()
         try:
-            while cap.isOpened() and display_queue.empty():
+            while cap.isOpened() and application_queue.empty():
                 image_name = str(cap.get(0)).replace('.', '_')
                 # Capture frame-by-frame
                 ret, frame = cap.read()
@@ -88,29 +88,25 @@ def collect_images(app_server, image_processing):
 
 
 def perform_predictions(yolo_model):
-    while True:
-        while not images_to_process_queue.empty():
-            image_pop = images_to_process_queue.get()
-            image_path = image_pop[0]
-            image_recv_time = image_pop[1]
-            processed_array = yolo_model.predict_and_save_image(image_path)
+    while application_queue.empty():
+        while not images_to_process_queue.empty() and application_queue.empty():
+            image = images_to_process_queue.get()
+            processed_array = yolo_model.predict_image(image)
             height = processed_array.shape[0]
             width = processed_array.shape[1]
 
-            txt_img_a = cv2.putText(img=processed_array, text="avg predict time: %s" % yolo_model.average_predict_time,
-                                    org=(5, (height - 5)), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
-                                    color=(0, 0, 0), thickness=1)
-            txt_img_b = cv2.putText(img=txt_img_a, text="time since recv: %s" % round(time.time() - image_recv_time, 3),
-                                    org=(5, (height - 25)), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
-                                    color=(0, 0, 0), thickness=1)
-            processed_images_queue.put(txt_img_b)
-            os.remove(image_path)
+            txt_img = cv2.putText(img=processed_array, text="avg predict time: %s" % yolo_model.average_predict_time,
+                                  org=(5, (height - 5)), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
+                                  color=(0, 0, 0), thickness=1)
+
+            processed_images_queue.put(txt_img)
+    print("exiting perform_predictions")
 
 
 def display_images():
     current_time = time.time()
-    while display_queue.empty():
-        while not processed_images_queue.empty():
+    while application_queue.empty():
+        while not processed_images_queue.empty() and application_queue.empty():
             proc_pop = processed_images_queue.get()
             txt_img = cv2.putText(img=proc_pop,
                                   text="FPS: %s" % int(1 / (time.time() - current_time)),
@@ -123,7 +119,7 @@ def display_images():
             k = cv2.waitKey(20)
             # 113 is ASCII code for q key
             if k == 113:
-                display_queue.put("end_threads")
+                application_queue.put("end_threads")
                 break
 
             # if we fall too far behind, purge the queue (shouldn't happen?)
@@ -149,7 +145,7 @@ def main():
     if do_image_processing:
         yv4_model = YoloPredictions()
         print('Performing test prediciton...')
-        yv4_model.predict_and_save_image('./img/street.jpeg')
+        yv4_model.predict_image('./img/street.jpeg')
         predict_thread = threading.Thread(target=perform_predictions, args=(yv4_model,))
         predict_thread.start()
 

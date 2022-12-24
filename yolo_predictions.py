@@ -16,15 +16,12 @@ class YoloPredictions(object):
         self._prediction_sum = 0
         self.average_predict_time = None
 
-    def predict_and_save_image(self, image_data):
-        """
-        Performs a model prediction on the provided image and saves the predicted image with bounding boxes.
-
-        :param image_data: Path to the image.
-        :return Numpy array of the processed image.
-        """
+    def predict_image(self, image):
         start_time = time.time()
-        array, df = self.model.predict(image_data, random_color=True, plot_img=False)
+        if isinstance(image, str):
+            array, df = self.model.predict(image, random_color=True, plot_img=False)
+        else:
+            array, df = self.model.predict_img(image, random_color=True, plot_img=False, return_output=True)
         processing_time = time.time() - start_time
         self._prediction_sum += processing_time
         self.total_predictions += 1
@@ -32,8 +29,7 @@ class YoloPredictions(object):
             self.average_predict_time = processing_time
         else:
             self.average_predict_time = round(self._prediction_sum / self.total_predictions, 4)
-        print('Avg prediction time: %s' % self.average_predict_time)
-
+        # print('Avg prediction time: %s' % self.average_predict_time)
         return array
 
 

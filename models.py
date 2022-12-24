@@ -106,9 +106,11 @@ class Yolov4(object):
                                 epochs=epochs,
                                 callbacks=callbacks,
                                 initial_epoch=initial_epoch)
+
     # raw_img: RGB
-    def predict_img(self, raw_img, random_color=True, plot_img=True, figsize=(10, 10), show_text=True, return_output=False):
-        print('img shape: ', raw_img.shape)
+    def predict_img(self, raw_img, random_color=True, plot_img=True, figsize=(10, 10),
+                    show_text=True, return_output=False):
+        # print('img shape: ', raw_img.shape)
         img = self.preprocess_img(raw_img)
         imgs = np.expand_dims(img, axis=0)
         pred_output = self.inference_model.predict(imgs)
@@ -117,7 +119,7 @@ class Yolov4(object):
                                         class_names=self.class_names)
 
         output_img = draw_bbox(raw_img, detections, cmap=self.class_color, random_color=random_color, figsize=figsize,
-                    show_text=show_text, show_img=plot_img)
+                               show_text=show_text, show_img=plot_img)
         if return_output:
             return output_img, detections
         else:
