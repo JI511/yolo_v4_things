@@ -1,3 +1,5 @@
+import os
+
 yolo_config = {
     # Basic
     'img_size': (416, 416, 3),
@@ -16,4 +18,4 @@ yolo_config = {
     'score_threshold': 0.3,
 }
 
-VIDEO_SAVE_DIRECTORY = r'/home/pi/Desktop'
+VIDEO_SAVE_DIRECTORY = os.path.abspath(__file__)

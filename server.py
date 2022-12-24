@@ -16,9 +16,39 @@ from yolo_predictions import YoloPredictions
 
 BUFFER_SIZE = 2048
 images_to_process_queue = Queue()
-processed_images = Queue()
+processed_images_queue = Queue()
+display_queue = Queue()
 SERVER_IP = '192.168.0.228'
 SERVER_PORT = 10002
+
+
+def process_webcam(process_images):
+    # Creating a VideoCapture object to read the webcam video
+    cap = cv2.VideoCapture(0)
+
+    if cap.isOpened():
+        start_time = time.time()
+        try:
+            while cap.isOpened() and display_queue.empty():
+                image_name = str(cap.get(0)).replace('.', '_')
+                # Capture frame-by-frame
+                ret, frame = cap.read()
+                frame = cv2.resize(frame, (540, 380), fx=0, fy=0,
+                                   interpolation=cv2.INTER_CUBIC)
+                if process_images:
+                    images_to_process_queue.put(frame)
+                else:
+                    txt_img = cv2.putText(img=frame,
+                                          text=f"{round(time.time() - start_time, 1)}",
+                                          org=(55, 15), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
+                                          color=(0, 0, 0), thickness=1)
+                    processed_images_queue.put(txt_img)
+        except KeyboardInterrupt:
+            pass
+
+    # release the video capture object
+    cap.release()
+    print("Exiting process_webcam")
 
 
 def collect_images(app_server, image_processing):
@@ -47,7 +77,7 @@ def collect_images(app_server, image_processing):
                 images_to_process_queue.put((image_path, time.time()))
             else:
                 img_arr = np.asarray(image)
-                processed_images.put(img_arr)
+                processed_images_queue.put(img_arr)
 
         except UnidentifiedImageError:
             print('There was an issue processing image data. Ignoring image.')
@@ -73,45 +103,48 @@ def perform_predictions(yolo_model):
             txt_img_b = cv2.putText(img=txt_img_a, text="time since recv: %s" % round(time.time() - image_recv_time, 3),
                                     org=(5, (height - 25)), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
                                     color=(0, 0, 0), thickness=1)
-            processed_images.put(txt_img_b)
+            processed_images_queue.put(txt_img_b)
             os.remove(image_path)
 
 
 def display_images():
     current_time = time.time()
-    while True:
-        if processed_images.empty():
-            # put the thread to sleep so it doesnt take up processing time, this was causing odd socket behavior
-            time.sleep(0.05)
-        else:
-            while not processed_images.empty():
-                proc_pop = processed_images.get()
-                txt_img = cv2.putText(img=proc_pop,
-                                      text="FPS: %s" % int(1 / (time.time() - current_time)),
-                                      org=(5, 15), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
-                                      color=(0, 0, 0), thickness=1)
-                current_time = time.time()
-                cv2.imshow('Processed', txt_img)
+    while display_queue.empty():
+        while not processed_images_queue.empty():
+            proc_pop = processed_images_queue.get()
+            txt_img = cv2.putText(img=proc_pop,
+                                  text="FPS: %s" % int(1 / (time.time() - current_time)),
+                                  org=(5, 15), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.0,
+                                  color=(0, 0, 0), thickness=1)
+            current_time = time.time()
+            cv2.imshow('Processed', txt_img)
 
-                # This escape sequence is needed for cv2.imshow() to work
-                k = cv2.waitKey(20)
-                # 113 is ASCII code for q key
-                if k == 113:
-                    break
+            # This escape sequence is needed for cv2.imshow() to work
+            k = cv2.waitKey(20)
+            # 113 is ASCII code for q key
+            if k == 113:
+                display_queue.put("end_threads")
+                break
 
-                # if we fall too far behind, purge the queue (shouldn't happen?)
-                if processed_images.qsize() > 20:
-                    with processed_images.mutex:
-                        processed_images.queue.clear()
+            # if we fall too far behind, purge the queue (shouldn't happen?)
+            if processed_images_queue.qsize() > 20:
+                with processed_images_queue.mutex:
+                    processed_images_queue.queue.clear()
+
+    cv2.destroyAllWindows()
+    print("Exiting display_images")
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--do_processing", help="True if you want to do object detection on the video stream.",
-                        type=bool, default=False)
+                        action='store_true')
+    parser.add_argument("--serverless", help="True if your camera is connected to the processing pc.",
+                        action='store_true')
     args = parser.parse_args()
 
     do_image_processing = args.do_processing
+    serverless = args.serverless
 
     if do_image_processing:
         yv4_model = YoloPredictions()
@@ -120,13 +153,22 @@ if __name__ == '__main__':
         predict_thread = threading.Thread(target=perform_predictions, args=(yv4_model,))
         predict_thread.start()
 
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # AF_INET = IP, SOCK_STREAM = TCP
-    server.bind((SERVER_IP, SERVER_PORT))
-    print('server bound to %s at port %s' % (SERVER_IP, SERVER_PORT))
-    server.listen()
-    print('server listening...')
+    if serverless:
+        cam_thread = threading.Thread(target=process_webcam, args=(do_image_processing,))
+        cam_thread.start()
 
-    sock_thread = threading.Thread(target=collect_images, args=(server, do_image_processing))
-    sock_thread.start()
+    else:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # AF_INET = IP, SOCK_STREAM = TCP
+        server.bind((SERVER_IP, SERVER_PORT))
+        print('server bound to %s at port %s' % (SERVER_IP, SERVER_PORT))
+        server.listen()
+        print('server listening...')
+        sock_thread = threading.Thread(target=collect_images, args=(server, do_image_processing))
+        sock_thread.start()
+
     show_thread = threading.Thread(target=display_images, args=())
     show_thread.start()
+
+
+if __name__ == '__main__':
+    main()

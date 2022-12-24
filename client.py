@@ -110,7 +110,7 @@ def process_webcam_video(send_rate, fourcc, output_name=None, max_time=100):
     print('Releasing the capture and destroying any windows.')
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--send_rate", help="The number of frames per second (integer) to send to the server"
                                             " for image processing. The default value is uncapped.",
@@ -128,3 +128,7 @@ if __name__ == '__main__':
 
     # send_thread = threading.Thread(target=send_images, args=())
     # send_thread.start()
+
+
+if __name__ == '__main__':
+    main()
