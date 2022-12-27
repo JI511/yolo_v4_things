@@ -1,4 +1,5 @@
 import os
+import cv2
 
 yolo_config = {
     # Basic
@@ -16,6 +17,13 @@ yolo_config = {
     'max_boxes': 100,
     'iou_threshold': 0.413,
     'score_threshold': 0.3,
+}
+
+display_config = {
+    "info_text_color": (0, 211, 0),
+    "font": cv2.FONT_HERSHEY_PLAIN,
+    "font_size": 1.0,
+    "thickness": 1
 }
 
 VIDEO_SAVE_DIRECTORY = os.path.abspath(__file__)

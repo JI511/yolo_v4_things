@@ -25,11 +25,11 @@ class YoloPredictions(object):
         processing_time = time.time() - start_time
         self._prediction_sum += processing_time
         self.total_predictions += 1
-        if self.average_predict_time is None:
-            self.average_predict_time = processing_time
-        else:
-            self.average_predict_time = round(self._prediction_sum / self.total_predictions, 4)
-        # print('Avg prediction time: %s' % self.average_predict_time)
+        self.average_predict_time = round(self._prediction_sum / self.total_predictions, 2)
+
+        if self.total_predictions % 20 == 0:
+            print(self.average_predict_time)
+
         return array
 
 
